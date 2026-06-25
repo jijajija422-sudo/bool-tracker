@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
 import { BookProvider } from './context/BookContext';
 import Sidebar from './components/Sidebar';
@@ -12,9 +12,21 @@ function App() {
   const [showAddBook, setShowAddBook] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  useEffect(() => {
+    const isDark =
+      localStorage.getItem('theme') === 'dark' ||
+      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   return (
     <BookProvider>
-      <div className="flex flex-col md:flex-row h-screen bg-warm-cream font-sans text-sage-900 overflow-hidden">
+      <div className="flex flex-col md:flex-row h-screen bg-warm-cream dark:bg-sage-950 font-sans text-sage-900 dark:text-sage-100 overflow-hidden">
+
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -24,10 +36,10 @@ function App() {
         <main className="flex-1 flex flex-col p-4 md:p-8 pb-24 md:pb-8 overflow-hidden">
           <header className="mb-8 md:mb-12 shrink-0 flex justify-between items-start">
             <div>
-              <h1 className="text-3xl md:text-4xl font-serif text-sage-800 tracking-tight">
+              <h1 className="text-3xl md:text-4xl font-serif text-sage-800 dark:text-sage-100 tracking-tight">
                 {activeTab === 'board' ? 'Your Library' : 'Reading Insights'}
               </h1>
-              <p className="text-sage-600 mt-2 italic text-sm md:text-base">
+              <p className="text-sage-600 dark:text-sage-300 mt-2 italic text-sm md:text-base">
                 {activeTab === 'board'
                   ? 'Curate your collection, one page at a time.'
                   : 'Visualize your journey through the world of books.'}

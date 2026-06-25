@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Check, Camera, Loader2 } from 'lucide-react';
 import { Book, BookStatus } from '../types';
 import { useBooks } from '../context/BookContext';
@@ -24,7 +24,42 @@ function parseList(value: string): string[] {
 }
 
 const BookFormModal: React.FC<BookFormModalProps> = ({ isOpen, onClose, book, mode }) => {
-  const { addBook, updateBook } = useBooks();
+  const { addBook, updateBook, books } = useBooks();
+
+  // Extract unique tags for autocomplete suggestions
+  const existingGenres = useMemo(() => {
+    const set = new Set<string>();
+    books.forEach((b) => b.genres.forEach((g) => set.add(g)));
+    return Array.from(set).sort();
+  }, [books]);
+
+  const existingTropes = useMemo(() => {
+    const set = new Set<string>();
+    books.forEach((b) => b.tropes.forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [books]);
+
+  const existingMoods = useMemo(() => {
+    const set = new Set<string>();
+    books.forEach((b) => b.moods.forEach((m) => set.add(m)));
+    return Array.from(set).sort();
+  }, [books]);
+
+  const handleAddTag = (field: 'genres' | 'tropes' | 'moods', tag: string) => {
+    const currentVal = formData[field];
+    const tags = currentVal
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (!tags.some((t) => t.toLowerCase() === tag.toLowerCase())) {
+      tags.push(tag);
+      setFormData((prev) => ({
+        ...prev,
+        [field]: tags.join(', '),
+      }));
+    }
+  };
   const [showScanner, setShowScanner] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -256,10 +291,30 @@ const BookFormModal: React.FC<BookFormModalProps> = ({ isOpen, onClose, book, mo
                 id="genres"
                 type="text"
                 placeholder="Fantasy, Mystery"
-                className="w-full px-4 py-3 rounded-xl border border-sage-100 focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage text-sm md:text-base"
+                className="w-full px-4 py-3 rounded-xl border border-sage-100 focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage text-sm md:text-base dark:bg-sage-950 dark:border-sage-800 text-sage-900 dark:text-sage-100"
                 value={formData.genres}
                 onChange={(e) => setFormData({ ...formData, genres: e.target.value })}
               />
+              {existingGenres.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5 max-h-20 overflow-y-auto pr-1 custom-scrollbar">
+                  {existingGenres
+                    .filter((g) => {
+                      const current = formData.genres.split(',').map((s) => s.trim().toLowerCase());
+                      return !current.includes(g.toLowerCase());
+                    })
+                    .slice(0, 6)
+                    .map((genre) => (
+                      <button
+                        key={genre}
+                        type="button"
+                        onClick={() => handleAddTag('genres', genre)}
+                        className="px-2 py-0.5 rounded bg-sage-50 dark:bg-sage-900/40 text-sage-600 dark:text-sage-400 border border-sage-100 dark:border-sage-800/80 hover:bg-sage-100 dark:hover:bg-sage-900 text-[10px] font-semibold transition-colors"
+                      >
+                        + {genre}
+                      </button>
+                    ))}
+                </div>
+              )}
             </div>
             <div className="space-y-1">
               <label htmlFor="tropes" className="text-[10px] md:text-xs uppercase tracking-wider text-sage-400 font-bold">
@@ -268,10 +323,31 @@ const BookFormModal: React.FC<BookFormModalProps> = ({ isOpen, onClose, book, mo
               <input
                 id="tropes"
                 type="text"
-                className="w-full px-4 py-3 rounded-xl border border-sage-100 focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage text-sm md:text-base"
+                placeholder="Dark Academia, Found Family"
+                className="w-full px-4 py-3 rounded-xl border border-sage-100 focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage text-sm md:text-base dark:bg-sage-950 dark:border-sage-800 text-sage-900 dark:text-sage-100"
                 value={formData.tropes}
                 onChange={(e) => setFormData({ ...formData, tropes: e.target.value })}
               />
+              {existingTropes.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5 max-h-20 overflow-y-auto pr-1 custom-scrollbar">
+                  {existingTropes
+                    .filter((t) => {
+                      const current = formData.tropes.split(',').map((s) => s.trim().toLowerCase());
+                      return !current.includes(t.toLowerCase());
+                    })
+                    .slice(0, 6)
+                    .map((trope) => (
+                      <button
+                        key={trope}
+                        type="button"
+                        onClick={() => handleAddTag('tropes', trope)}
+                        className="px-2 py-0.5 rounded bg-sage-50 dark:bg-sage-900/40 text-sage-600 dark:text-sage-400 border border-sage-100 dark:border-sage-800/80 hover:bg-sage-100 dark:hover:bg-sage-900 text-[10px] font-semibold transition-colors"
+                      >
+                        + {trope}
+                      </button>
+                    ))}
+                </div>
+              )}
             </div>
             <div className="space-y-1">
               <label htmlFor="moods" className="text-[10px] md:text-xs uppercase tracking-wider text-sage-400 font-bold">
@@ -280,10 +356,31 @@ const BookFormModal: React.FC<BookFormModalProps> = ({ isOpen, onClose, book, mo
               <input
                 id="moods"
                 type="text"
-                className="w-full px-4 py-3 rounded-xl border border-sage-100 focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage text-sm md:text-base"
+                placeholder="Melancholic, Lyrical"
+                className="w-full px-4 py-3 rounded-xl border border-sage-100 focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage text-sm md:text-base dark:bg-sage-950 dark:border-sage-800 text-sage-900 dark:text-sage-100"
                 value={formData.moods}
                 onChange={(e) => setFormData({ ...formData, moods: e.target.value })}
               />
+              {existingMoods.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5 max-h-20 overflow-y-auto pr-1 custom-scrollbar">
+                  {existingMoods
+                    .filter((m) => {
+                      const current = formData.moods.split(',').map((s) => s.trim().toLowerCase());
+                      return !current.includes(m.toLowerCase());
+                    })
+                    .slice(0, 6)
+                    .map((mood) => (
+                      <button
+                        key={mood}
+                        type="button"
+                        onClick={() => handleAddTag('moods', mood)}
+                        className="px-2 py-0.5 rounded bg-sage-50 dark:bg-sage-900/40 text-sage-600 dark:text-sage-400 border border-sage-100 dark:border-sage-800/80 hover:bg-sage-100 dark:hover:bg-sage-900 text-[10px] font-semibold transition-colors"
+                      >
+                        + {mood}
+                      </button>
+                    ))}
+                </div>
+              )}
             </div>
           </div>
 

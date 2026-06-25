@@ -30,9 +30,17 @@ export interface ReadingStats {
   totalPagesThisMonth: number;
   averageRating: number | null;
   booksFinishedThisMonth: number;
+  yearlyReadingGoal: number;
+  finishedBooksThisYear: number;
+  recentSessions: (ReadingSession & { bookTitle: string })[];
+  randomQuote: { text: string; author: string; page?: number } | null;
 }
 
-export function useReadingStats(books: Book[], sessions: ReadingSession[]): ReadingStats {
+export function useReadingStats(
+  books: Book[],
+  sessions: ReadingSession[],
+  yearlyGoal: number = 12
+): ReadingStats {
   return useMemo(() => {
     const finishedBooks = books.filter((b) => b.status === 'FINISHED');
     const inProgressBooks = books.filter((b) => b.status === 'IN_PROGRESS');
@@ -105,6 +113,52 @@ export function useReadingStats(books: Book[], sessions: ReadingSession[]): Read
       return d >= monthStart && d <= monthEnd;
     }).length;
 
+    // 1. Calculate books finished this year
+    const currentYear = new Date().getFullYear();
+    const finishedBooksThisYear = finishedBooks.filter((b) => {
+      if (!b.dateFinished) return false;
+      try {
+        return parseISO(b.dateFinished).getFullYear() === currentYear;
+      } catch {
+        return false;
+      }
+    }).length;
+
+    // 2. Fetch recent sessions
+    const recentSessions = [...sessions]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5)
+      .map((session) => {
+        const book = books.find((b) => b.id === session.bookId);
+        return {
+          ...session,
+          bookTitle: book ? book.title : 'Deleted Book',
+        };
+      });
+
+    // 3. Featured Quote of the Day
+    const allQuotes: { text: string; author: string; page?: number }[] = [];
+    books.forEach((b) => {
+      if (Array.isArray(b.quotes)) {
+        b.quotes.forEach((q) => {
+          allQuotes.push({
+            text: q.text,
+            author: b.author,
+            page: q.page,
+          });
+        });
+      }
+    });
+
+    let randomQuote: { text: string; author: string; page?: number } | null = null;
+    if (allQuotes.length > 0) {
+      const dayOfYear = Math.floor(
+        (new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+      );
+      const index = dayOfYear % allQuotes.length;
+      randomQuote = allQuotes[index];
+    }
+
     return {
       totalBooks: books.length,
       finishedBooks,
@@ -118,6 +172,10 @@ export function useReadingStats(books: Book[], sessions: ReadingSession[]): Read
       totalPagesThisMonth,
       averageRating,
       booksFinishedThisMonth,
+      yearlyReadingGoal: yearlyGoal,
+      finishedBooksThisYear,
+      recentSessions,
+      randomQuote,
     };
-  }, [books, sessions]);
+  }, [books, sessions, yearlyGoal]);
 }

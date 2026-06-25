@@ -40,6 +40,7 @@ export interface LibraryData {
   version: number;
   books: Book[];
   readingSessions: ReadingSession[];
+  yearlyGoal?: number;
 }
 
 export interface LibraryExport {
@@ -47,4 +48,6 @@ export interface LibraryExport {
   exportedAt: string;
   books: Book[];
   readingSessions: ReadingSession[];
+  yearlyGoal?: number;
 }
+

@@ -21,6 +21,8 @@ import { generateId } from '../utils/id';
 interface BookContextType {
   books: Book[];
   readingSessions: ReadingSession[];
+  yearlyGoal: number;
+  updateYearlyGoal: (goal: number) => void;
   addBook: (book: Omit<Book, 'id' | 'order'> & { id?: string }) => void;
   updateBook: (book: Book) => void;
   deleteBook: (id: string) => void;
@@ -32,6 +34,7 @@ interface BookContextType {
   importData: (raw: unknown) => boolean;
   loadSampleData: () => void;
   clearLibrary: () => void;
+  deleteReadingSession: (id: string) => void;
 }
 
 const BookContext = createContext<BookContextType | undefined>(undefined);
@@ -40,17 +43,22 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const initial = loadLibrary();
   const [books, setBooks] = useState<Book[]>(initial.books);
   const [readingSessions, setReadingSessions] = useState<ReadingSession[]>(initial.readingSessions);
+  const [yearlyGoal, setYearlyGoal] = useState<number>(initial.yearlyGoal ?? 12);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      saveLibrary({ version: 2, books, readingSessions });
+      saveLibrary({ version: 2, books, readingSessions, yearlyGoal });
     }, 300);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [books, readingSessions]);
+  }, [books, readingSessions, yearlyGoal]);
+
+  const updateYearlyGoal = useCallback((goal: number) => {
+    setYearlyGoal(goal);
+  }, []);
 
   const addBook = useCallback((book: Omit<Book, 'id' | 'order'> & { id?: string }) => {
     setBooks((prev) => {
@@ -158,14 +166,15 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   const exportData = useCallback(() => {
-    return exportLibrary({ version: 2, books, readingSessions });
-  }, [books, readingSessions]);
+    return exportLibrary({ version: 2, books, readingSessions, yearlyGoal });
+  }, [books, readingSessions, yearlyGoal]);
 
   const importData = useCallback((raw: unknown) => {
     const data = importLibrary(raw);
     if (!data) return false;
     setBooks(data.books);
     setReadingSessions(data.readingSessions);
+    setYearlyGoal(data.yearlyGoal ?? 12);
     return true;
   }, []);
 
@@ -179,10 +188,16 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setReadingSessions([]);
   }, []);
 
+  const deleteReadingSession = useCallback((id: string) => {
+    setReadingSessions((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
   const value = useMemo(
     () => ({
       books,
       readingSessions,
+      yearlyGoal,
+      updateYearlyGoal,
       addBook,
       updateBook,
       deleteBook,
@@ -194,10 +209,13 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
       importData,
       loadSampleData,
       clearLibrary,
+      deleteReadingSession,
     }),
     [
       books,
       readingSessions,
+      yearlyGoal,
+      updateYearlyGoal,
       addBook,
       updateBook,
       deleteBook,
@@ -209,6 +227,7 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
       importData,
       loadSampleData,
       clearLibrary,
+      deleteReadingSession,
     ]
   );
 

@@ -163,7 +163,12 @@ export function loadLibrary(): LibraryData {
         const readingSessions = Array.isArray(parsed.readingSessions)
           ? parsed.readingSessions.map(normalizeSession).filter((s): s is ReadingSession => s !== null)
           : [];
-        return { version: CURRENT_VERSION, books: assignOrders(books), readingSessions };
+        return {
+          version: CURRENT_VERSION,
+          books: assignOrders(books),
+          readingSessions,
+          yearlyGoal: typeof parsed.yearlyGoal === 'number' ? parsed.yearlyGoal : 12,
+        };
       }
     }
 
@@ -181,7 +186,7 @@ export function loadLibrary(): LibraryData {
     // fall through to empty library
   }
 
-  return { version: CURRENT_VERSION, books: [], readingSessions: [] };
+  return { version: CURRENT_VERSION, books: [], readingSessions: [], yearlyGoal: 12 };
 }
 
 export function saveLibrary(data: LibraryData): void {
@@ -198,6 +203,7 @@ export function exportLibrary(data: LibraryData): LibraryExport {
     exportedAt: new Date().toISOString(),
     books: data.books,
     readingSessions: data.readingSessions,
+    yearlyGoal: data.yearlyGoal ?? 12,
   };
 }
 
@@ -219,6 +225,7 @@ export function importLibrary(raw: unknown): LibraryData | null {
     version: CURRENT_VERSION,
     books: assignOrders(books),
     readingSessions,
+    yearlyGoal: typeof data.yearlyGoal === 'number' ? data.yearlyGoal : 12,
   };
 }
 
