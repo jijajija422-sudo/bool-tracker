@@ -7,17 +7,14 @@ import BookCard from './BookCard';
 interface SortableBookProps {
   book: Book;
   onClick: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-const SortableBook: React.FC<SortableBookProps> = ({ book, onClick }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: book.id });
+const SortableBook: React.FC<SortableBookProps> = ({ book, onClick, onEdit, onDelete }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: book.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -31,15 +28,12 @@ const SortableBook: React.FC<SortableBookProps> = ({ book, onClick }) => {
       style={style}
       {...attributes}
       {...listeners}
-      onClick={(e) => {
-        // Only trigger onClick if not dragging
-        if (!isDragging) {
-          onClick();
-        }
+      onClick={() => {
+        if (!isDragging) onClick();
       }}
       className="cursor-grab active:cursor-grabbing"
     >
-      <BookCard book={book} />
+      <BookCard book={book} onEdit={onEdit} onDelete={onDelete} />
     </div>
   );
 };

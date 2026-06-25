@@ -1,4 +1,6 @@
-export type BookStatus = 'TO_READ' | 'IN_PROGRESS' | 'FINISHED' | string;
+export type BookStatus = 'TO_READ' | 'IN_PROGRESS' | 'FINISHED';
+
+export const BOOK_STATUSES: BookStatus[] = ['TO_READ', 'IN_PROGRESS', 'FINISHED'];
 
 export interface Quote {
   id: string;
@@ -19,6 +21,7 @@ export interface Book {
   tropes: string[];
   moods: string[];
   status: BookStatus;
+  order: number;
   dateStarted?: string;
   dateFinished?: string;
   quotes: Quote[];
@@ -31,4 +34,17 @@ export interface ReadingSession {
   date: string;
   pagesRead: number;
   durationMinutes: number;
+}
+
+export interface LibraryData {
+  version: number;
+  books: Book[];
+  readingSessions: ReadingSession[];
+}
+
+export interface LibraryExport {
+  version: number;
+  exportedAt: string;
+  books: Book[];
+  readingSessions: ReadingSession[];
 }
